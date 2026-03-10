@@ -202,3 +202,4 @@ src/
 
 Place your FIT N FEAT logo image at **`public/logo.png`**. The site uses this for the navbar, footer, and admin panel. If the file is missing, a fallback "FNF" badge is shown.
 "# gym-website" 
+"# gym-website" 
