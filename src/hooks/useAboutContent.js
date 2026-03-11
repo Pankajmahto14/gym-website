@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
+import { ref as dbRef, get, set } from 'firebase/database';
+import { ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, storage } from '../firebase/config';
 import { getCached, setCache } from '../lib/cache';
 
@@ -22,7 +22,7 @@ export const DEFAULT_ABOUT = {
   gymImageUrl: '',
   gymImageStoragePath: '',
   badgeTitle: '#1',
-  badgeSubtitle: 'Rated Gym 2024',
+  badgeSubtitle: 'Rated Gym',
   chips: ['Olympic Lifting Zone', 'Cardio Deck', 'Sauna & Recovery', 'Nutrition Bar'],
   stats: [
     { value: 2500, suffix: '+', label: 'Happy Members', icon: '💪' },
@@ -48,8 +48,22 @@ function mergeWithDefaults(data) {
   };
 }
 
+/** Firestore does not accept undefined; strip it so setDoc never fails on invalid data. */
+function sanitizeForFirestore(obj) {  
+  if (obj === null || obj === undefined) return obj;
+  if (Array.isArray(obj)) return obj.map((item) => sanitizeForFirestore(item));
+  if (typeof obj === 'object') {
+    const out = {};
+    for (const [k, v] of Object.entries(obj)) {
+      if (v !== undefined) out[k] = sanitizeForFirestore(v);
+    }
+    return out;
+  }
+  return obj;
+}
+
 export function useAboutContent() {
-  const [content, setContent] = useState(DEFAULT_ABOUT);
+  const [content, setContent] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const fetchAbout = async () => {
@@ -61,12 +75,12 @@ export function useAboutContent() {
       setLoading(true);
     }
     try {
-      const snap = await getDoc(doc(db, SETTINGS_COLLECTION, ABOUT_DOC_ID));
-      const next = mergeWithDefaults(snap.exists() ? snap.data() : null);
+      const snap = await get(dbRef(db, `${SETTINGS_COLLECTION}/${ABOUT_DOC_ID}`));
+      const next = mergeWithDefaults(snap.exists() ? snap.val() : null);
       setContent(next);
       setCache(CACHE_KEY, next);
     } catch (_) {
-      setContent(DEFAULT_ABOUT);
+      setContent(null);
     } finally {
       setLoading(false);
     }
@@ -113,9 +127,9 @@ export function useAboutContent() {
   const uploadGymImage = async (file, onProgress) => {
     const toUpload = await resizeImageIfNeeded(file);
     const path = `${GYM_IMAGE_PATH}_${Date.now()}.${file.name.split('.').pop() || 'jpg'}`;
-    const storageRef = ref(storage, path);
+    const fileRef = storageRef(storage, path);
     await new Promise((resolve, reject) => {
-      const task = uploadBytesResumable(storageRef, toUpload);
+      const task = uploadBytesResumable(fileRef, toUpload);
       task.on(
         'state_changed',
         (snap) => onProgress?.(Math.round((snap.bytesTransferred / snap.totalBytes) * 100)),
@@ -123,59 +137,74 @@ export function useAboutContent() {
         resolve
       );
     });
-    const url = await getDownloadURL(storageRef);
+    const url = await getDownloadURL(fileRef);
     return { url, storagePath: path };
   };
 
-  const saveAboutContent = async (data, gymImageFile, onProgress, { onOptimisticDone } = {}) => {
-    const buildPayload = (gymUrl, gymPath) => ({
-      aboutSubtitle: data.aboutSubtitle ?? content.aboutSubtitle,
-      paragraph1: data.paragraph1 ?? content.paragraph1,
-      paragraph2: data.paragraph2 ?? content.paragraph2,
-      paragraph3: data.paragraph3 ?? content.paragraph3,
-      gymImageUrl: gymUrl,
-      gymImageStoragePath: gymPath,
-      badgeTitle: data.badgeTitle ?? content.badgeTitle,
-      badgeSubtitle: data.badgeSubtitle ?? content.badgeSubtitle,
-      chips: data.chips ?? content.chips,
-      stats: (data.stats ?? content.stats).map((s) => ({
-        value: typeof s.value === 'number' ? s.value : parseInt(s.value, 10) || 0,
-        suffix: s.suffix ?? '+',
-        label: s.label ?? '',
-        icon: s.icon ?? '🏋️',
-      })),
-    });
+  const saveAboutContent = async (data, gymImageFile, onProgress) => {
+    
+    const buildPayload = (gymUrl, gymPath) => {
+      const raw = {
+        aboutSubtitle: (data.aboutSubtitle ?? content?.aboutSubtitle) ?? '',
+        paragraph1: (data.paragraph1 ?? content?.paragraph1) ?? '',
+        paragraph2: (data.paragraph2 ?? content?.paragraph2) ?? '',
+        paragraph3: (data.paragraph3 ?? content?.paragraph3) ?? '',
+        gymImageUrl: gymUrl ?? '',
+        gymImageStoragePath: gymPath ?? '',
+        badgeTitle: (data.badgeTitle ?? content?.badgeTitle) ?? '',
+        badgeSubtitle: (data.badgeSubtitle ?? content?.badgeSubtitle) ?? '',
+        chips: Array.isArray(data?.chips) ? data.chips : (content?.chips ?? []),
+        stats: (data.stats ?? content?.stats ?? []).slice(0, 4).map((s) => ({
+          value: typeof s?.value === 'number' ? s.value : parseInt(s?.value, 10) || 0,
+          suffix: (s?.suffix ?? '+').toString(),
+          label: (s?.label ?? '').toString(),
+          icon: (s?.icon ?? '🏋️').toString(),
+        })),
+      };
+      return raw;
+    };
 
-    // Optimistic update: show new text/chips/stats immediately (keep current image until upload done)
+    // Optimistic UI update: show new text/chips/stats immediately (keep current image until upload done)
+    // We no longer show default content optimistically to avoid flicker.
+    // Instead we keep showing the skeleton until Realtime Database data arrives.
     const optimisticPayload = buildPayload(
-      content.gymImageUrl ?? '',
-      content.gymImageStoragePath ?? ''
+      content?.gymImageUrl ?? '',
+      content?.gymImageStoragePath ?? ''
     );
-    const optimisticMerged = mergeWithDefaults(optimisticPayload);
-    setContent(optimisticMerged);
-    setCache(CACHE_KEY, optimisticMerged);
-    onOptimisticDone?.();
 
-    // Background: upload image if needed, then write to Firestore
-    let gymImageUrl = content.gymImageUrl ?? '';
-    let gymImageStoragePath = content.gymImageStoragePath ?? '';
+    let gymImageUrl = content?.gymImageUrl ?? '';
+    let gymImageStoragePath = content?.gymImageStoragePath ?? '';
+    let imageError = null;
 
     if (gymImageFile) {
-      if (content.gymImageStoragePath) {
+      if (content?.gymImageStoragePath) {
         try {
-          await deleteObject(ref(storage, content.gymImageStoragePath));
+          await deleteObject(storageRef(storage, content.gymImageStoragePath));
         } catch (_) {}
       }
-      const result = await uploadGymImage(gymImageFile, onProgress);
-      gymImageUrl = result.url;
-      gymImageStoragePath = result.storagePath;
+      try {
+        const result = await uploadGymImage(gymImageFile, onProgress);
+        gymImageUrl = result.url;
+        gymImageStoragePath = result.storagePath;
+      } catch (err) {
+        imageError = err;
+        // Keep existing image URLs; still save text/stats so details persist
+      }
     }
 
     const payload = buildPayload(gymImageUrl, gymImageStoragePath);
-    await setDoc(doc(db, SETTINGS_COLLECTION, ABOUT_DOC_ID), payload);
+    console.log("WRITING TO DB:", payload);
+
+    await set(dbRef(db, `${SETTINGS_COLLECTION}/${ABOUT_DOC_ID}`), payload);
+    console.log("DB WRITE COMPLETE");
     const next = mergeWithDefaults(payload);
     setContent(next);
     setCache(CACHE_KEY, next);
+    await fetchAbout();   // force reload from DB
+
+    if (imageError) {
+      return { imageError: imageError.message };
+    }
   };
 
   return { content, loading, refetch: fetchAbout, saveAboutContent, defaults: DEFAULT_ABOUT };

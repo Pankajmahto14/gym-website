@@ -79,10 +79,10 @@ export default function Hero() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="inline-flex items-center gap-2 glass rounded-full px-5 py-2 mb-8 text-sm text-primary font-medium"
+          className="inline-flex flex-wrap items-center justify-center gap-2 glass rounded-full px-4 py-2 mb-8 text-xs sm:text-sm text-primary font-medium max-w-xs mx-auto"
         >
           <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-          Keep Fit & Gain Skills
+          <span className="whitespace-normal text-center">Keep Fit &amp; Gain Skills</span>
         </motion.div>
 
         {/* Main heading */}
@@ -112,7 +112,7 @@ export default function Hero() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.4 }}
-          className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16"
+          className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10"
         >
           <button
             onClick={() => scrollToSection('#contact')}
@@ -126,27 +126,6 @@ export default function Hero() {
           >
             View Gallery
           </button>
-        </motion.div>
-
-        {/* Stats bar */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.6 }}
-          className="grid grid-cols-3 gap-4 max-w-lg mx-auto"
-        >
-          {[
-            { value: '2500+', label: 'Members' },
-            { value: '50+', label: 'Trainers' },
-            { value: '10+', label: 'Years' },
-          ].map((s) => (
-            <div key={s.label} className="glass rounded-2xl py-4 px-3">
-              <div className="font-display text-2xl font-bold text-primary">
-                {s.value}
-              </div>
-              <div className="text-gray-400 text-sm mt-1">{s.label}</div>
-            </div>
-          ))}
         </motion.div>
       </div>
 

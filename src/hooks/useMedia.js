@@ -1,17 +1,7 @@
 import { useState, useEffect } from 'react';
+import { ref as dbRef, get, push, set, update, remove } from 'firebase/database';
 import {
-  collection,
-  getDocs,
-  addDoc,
-  deleteDoc,
-  updateDoc,
-  doc,
-  serverTimestamp,
-  query,
-  orderBy,
-} from 'firebase/firestore';
-import {
-  ref,
+  ref as storageRef,
   uploadBytesResumable,
   getDownloadURL,
   deleteObject,
@@ -35,12 +25,13 @@ export function useMedia(type) {
       setLoading(true);
     }
     try {
-      const q = query(
-        collection(db, colName),
-        orderBy('createdAt', 'desc')
-      );
-      const snap = await getDocs(q);
-      const next = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      const snap = await get(dbRef(db, colName));
+      let next = [];
+      if (snap.exists()) {
+        const val = snap.val(); // { id: itemData }
+        next = Object.entries(val).map(([id, data]) => ({ id, ...data }));
+        next.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      }
       setItems(next);
       setCache(cacheKey, next);
     } catch (err) {
@@ -56,10 +47,10 @@ export function useMedia(type) {
 
   const uploadMedia = async (file, caption = '', onProgress) => {
     const uploadCol = file.type.startsWith('image') ? 'images' : 'videos';
-    const storageRef = ref(storage, `${uploadCol}/${Date.now()}_${file.name}`);
+    const fileRef = storageRef(storage, `${uploadCol}/${Date.now()}_${file.name}`);
 
     return new Promise((resolve, reject) => {
-      const task = uploadBytesResumable(storageRef, file);
+      const task = uploadBytesResumable(fileRef, file);
 
       task.on(
         'state_changed',
@@ -72,15 +63,17 @@ export function useMedia(type) {
         reject,
         async () => {
           const url = await getDownloadURL(task.snapshot.ref);
-          const docRef = await addDoc(collection(db, uploadCol), {
+          const listRef = dbRef(db, uploadCol);
+          const newRef = push(listRef);
+          await set(newRef, {
             url,
             caption,
             name: file.name,
             storagePath: task.snapshot.ref.fullPath,
-            createdAt: serverTimestamp(),
+            createdAt: Date.now(),
           });
           fetchItems();
-          resolve({ id: docRef.id, url, caption });
+          resolve({ id: newRef.key, url, caption });
         }
       );
     });
@@ -88,14 +81,14 @@ export function useMedia(type) {
 
   const deleteMedia = async (item, collectionName) => {
     if (item.storagePath) {
-      await deleteObject(ref(storage, item.storagePath));
+      await deleteObject(storageRef(storage, item.storagePath));
     }
-    await deleteDoc(doc(db, collectionName, item.id));
+    await remove(dbRef(db, `${collectionName}/${item.id}`));
     fetchItems();
   };
 
   const updateCaption = async (id, collectionName, caption) => {
-    await updateDoc(doc(db, collectionName, id), { caption });
+    await update(dbRef(db, `${collectionName}/${id}`), { caption });
     fetchItems();
   };
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { ref, get, set } from 'firebase/database';
 import { db } from '../firebase/config';
 import { getCached, setCache } from '../lib/cache';
 
@@ -28,13 +28,14 @@ export function useContactInfo() {
       setLoading(true);
     }
     try {
-      const snap = await getDoc(doc(db, SETTINGS_COLLECTION, CONTACT_DOC_ID));
-      const next = snap.exists() && snap.data()
+      const snap = await get(ref(db, `${SETTINGS_COLLECTION}/${CONTACT_DOC_ID}`));
+      const data = snap.exists() ? snap.val() : null;
+      const next = data
         ? {
-            address: snap.data().address ?? DEFAULTS.address,
-            phone: snap.data().phone ?? DEFAULTS.phone,
-            email: snap.data().email ?? DEFAULTS.email,
-            hours: snap.data().hours ?? DEFAULTS.hours,
+            address: data.address ?? DEFAULTS.address,
+            phone: data.phone ?? DEFAULTS.phone,
+            email: data.email ?? DEFAULTS.email,
+            hours: data.hours ?? DEFAULTS.hours,
           }
         : DEFAULTS;
       setContactInfo(next);
@@ -59,7 +60,7 @@ export function useContactInfo() {
     };
     setContactInfo(next);
     setCache(CACHE_KEY, next);
-    await setDoc(doc(db, SETTINGS_COLLECTION, CONTACT_DOC_ID), next);
+    await set(ref(db, `${SETTINGS_COLLECTION}/${CONTACT_DOC_ID}`), next);
   };
 
   return { contactInfo, loading, refetch: fetchContactInfo, saveContactInfo, defaults: DEFAULTS };

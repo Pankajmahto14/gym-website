@@ -15,15 +15,13 @@ export default function AdminContactInfo() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!loading) {
-      setForm({
-        address: contactInfo.address ?? defaults.address,
-        phone: contactInfo.phone ?? defaults.phone,
-        email: contactInfo.email ?? defaults.email,
-        hours: contactInfo.hours ?? defaults.hours,
-      });
-    }
-  }, [loading, contactInfo.address, contactInfo.phone, contactInfo.email, contactInfo.hours]);
+    setForm({
+      address: contactInfo.address ?? defaults.address,
+      phone: contactInfo.phone ?? defaults.phone,
+      email: contactInfo.email ?? defaults.email,
+      hours: contactInfo.hours ?? defaults.hours,
+    });
+  }, [contactInfo.address, contactInfo.phone, contactInfo.email, contactInfo.hours, defaults.address, defaults.phone, defaults.email, defaults.hours]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -44,19 +42,6 @@ export default function AdminContactInfo() {
     { key: 'email', label: 'Email', icon: EnvelopeIcon, placeholder: 'Email address' },
     { key: 'hours', label: 'Hours', icon: ClockIcon, placeholder: 'e.g. Mon–Sat: 5 AM–12 PM, 3:30–10 PM | Sun: 6–9:30 AM, 5–8:30 PM' },
   ];
-
-  if (loading) {
-    return (
-      <div className="card-dark p-8 animate-pulse">
-        <div className="h-6 bg-dark-50 rounded w-1/3 mb-6" />
-        <div className="space-y-4">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-12 bg-dark-50 rounded" />
-          ))}
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div>

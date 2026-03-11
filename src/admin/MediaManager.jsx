@@ -285,7 +285,7 @@ export default function MediaManager({ type }) {
       </AnimatePresence>
 
       {/* Media grid */}
-      {loading ? (
+      {loading && items.length === 0 ? (
         <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="aspect-video rounded-2xl bg-dark-50 animate-pulse" />

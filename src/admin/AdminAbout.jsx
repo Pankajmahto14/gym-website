@@ -29,7 +29,7 @@ export default function AdminAbout() {
   const [newChip, setNewChip] = useState('');
 
   useEffect(() => {
-    if (!loading) {
+    if (!loading && content) {
       setForm({
         aboutSubtitle: content.aboutSubtitle ?? defaults.aboutSubtitle,
         paragraph1: content.paragraph1 ?? defaults.paragraph1,
@@ -39,31 +39,38 @@ export default function AdminAbout() {
         badgeSubtitle: content.badgeSubtitle ?? defaults.badgeSubtitle,
         chips: [...(content.chips || defaults.chips)],
         stats: (() => {
-        const raw = content.stats && content.stats.length ? content.stats : defaults.stats;
-        const four = raw.slice(0, 4).map((s) => ({ ...s }));
-        while (four.length < 4) four.push({ value: 0, suffix: '+', label: '', icon: '🏋️' });
-        return four;
-      })(),
+          const raw = content.stats && content.stats.length ? content.stats : defaults.stats;
+          const four = raw.slice(0, 4).map((s) => ({ ...s }));
+          while (four.length < 4) four.push({ value: 0, suffix: '+', label: '', icon: '🏋️' });
+          return four;
+        })(),
       });
     }
   }, [loading, content, defaults]);
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
     setSaving(true);
+      console.log("SAVE CLICKED");  // add this
+
     setUploadProgress(0);
-    saveAboutContent(form, gymImageFile, setUploadProgress, {
-      onOptimisticDone: () => {
-        setSaving(false);
-        setUploadProgress(0);
-        setGymImageFile(null);
+    try {
+      const result = await saveAboutContent(form, gymImageFile, setUploadProgress);
+      console.log("dgfh", result);
+      
+      setGymImageFile(null);
+      if (result?.imageError) {
+        toast.success('Text and stats saved. Image upload failed — see STORAGE-CORS-SETUP.md to fix.');
+      } else {
         toast.success('About section updated!');
-      },
-    }).catch((err) => {
-      toast.error(err.message || 'Failed to save.');
+      }
+    } catch (err) {
+      const msg = err?.message || (typeof err === 'string' ? err : 'Failed to save.');
+      toast.error(msg);
+    } finally {
       setSaving(false);
       setUploadProgress(0);
-    });
+    }
   };
 
   const addChip = () => {
@@ -85,7 +92,7 @@ export default function AdminAbout() {
     setForm({ ...form, stats: next });
   };
 
-  if (loading) {
+  if (loading || !content) {
     return (
       <div className="space-y-6 animate-pulse">
         <div className="h-8 bg-dark-50 rounded w-1/3" />

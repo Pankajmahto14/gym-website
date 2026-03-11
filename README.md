@@ -67,7 +67,17 @@ service cloud.firestore {
 }
 ```
 
-### 5. Set Storage Rules
+### 5. Fix Storage CORS (for image/video uploads)
+
+If you get **CORS errors** when uploading images or videos, run:
+
+```bash
+gsutil cors set cors.json gs://gym-website-226e8.appspot.com
+```
+
+See **[STORAGE-CORS-SETUP.md](./STORAGE-CORS-SETUP.md)** for full instructions (install gsutil, add your production domain, etc.).
+
+### 6. Set Storage Rules
 
 In Firebase Console → Storage → Rules:
 ```
@@ -82,7 +92,7 @@ service firebase.storage {
 }
 ```
 
-### 6. Configure EmailJS (Contact form emails)
+### 7. Configure EmailJS (Contact form emails)
 
 1. Sign up at [dashboard.emailjs.com](https://dashboard.emailjs.com).
 2. Add an **Email Service** (e.g. Gmail) and connect your account.
@@ -99,7 +109,7 @@ service firebase.storage {
 
 Submissions from the contact form will be sent to your email via EmailJS.
 
-### 7. Run Development Server
+### 8. Run Development Server
 ```bash
 npm run dev
 ```

@@ -1,16 +1,6 @@
 import { useState, useEffect } from 'react';
-import {
-  collection,
-  getDocs,
-  addDoc,
-  deleteDoc,
-  updateDoc,
-  doc,
-  serverTimestamp,
-  query,
-  orderBy,
-} from 'firebase/firestore';
-import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
+import { ref as dbRef, get, push, set, update, remove } from 'firebase/database';
+import { ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, storage } from '../firebase/config';
 import { getCached, setCache } from '../lib/cache';
 
@@ -30,12 +20,13 @@ export function useTrainers() {
       setLoading(true);
     }
     try {
-      const q = query(
-        collection(db, COLLECTION),
-        orderBy('createdAt', 'asc')
-      );
-      const snap = await getDocs(q);
-      const next = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      const snap = await get(dbRef(db, COLLECTION));
+      let next = [];
+      if (snap.exists()) {
+        const val = snap.val(); // { id: trainerData }
+        next = Object.entries(val).map(([id, data]) => ({ id, ...data }));
+        next.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+      }
       setTrainers(next);
       setCache(CACHE_KEY, next);
     } catch (err) {
@@ -55,9 +46,9 @@ export function useTrainers() {
 
     if (imageFile) {
       const path = `trainers/${Date.now()}_${imageFile.name}`;
-      const storageRef = ref(storage, path);
+      const fileRef = storageRef(storage, path);
       await new Promise((resolve, reject) => {
-        const task = uploadBytesResumable(storageRef, imageFile);
+        const task = uploadBytesResumable(fileRef, imageFile);
         task.on(
           'state_changed',
           (snap) => onProgress?.(Math.round((snap.bytesTransferred / snap.totalBytes) * 100)),
@@ -71,14 +62,16 @@ export function useTrainers() {
       });
     }
 
-    await addDoc(collection(db, COLLECTION), {
+    const listRef = dbRef(db, COLLECTION);
+    const newRef = push(listRef);
+    await set(newRef, {
       name: data.name || '',
       role: data.role || '',
       exp: data.exp || '',
       specialty: data.specialty || '',
       imageUrl,
       storagePath,
-      createdAt: serverTimestamp(),
+      createdAt: Date.now(),
     });
     fetchTrainers();
   };
@@ -93,9 +86,9 @@ export function useTrainers() {
 
     if (imageFile) {
       const path = `trainers/${Date.now()}_${imageFile.name}`;
-      const storageRef = ref(storage, path);
+      const fileRef = storageRef(storage, path);
       await new Promise((resolve, reject) => {
-        const task = uploadBytesResumable(storageRef, imageFile);
+        const task = uploadBytesResumable(fileRef, imageFile);
         task.on(
           'state_changed',
           (snap) => onProgress?.(Math.round((snap.bytesTransferred / snap.totalBytes) * 100)),
@@ -109,17 +102,17 @@ export function useTrainers() {
       });
     }
 
-    await updateDoc(doc(db, COLLECTION, id), updates);
+    await update(dbRef(db, `${COLLECTION}/${id}`), updates);
     fetchTrainers();
   };
 
   const deleteTrainer = async (trainer) => {
     if (trainer.storagePath) {
       try {
-        await deleteObject(ref(storage, trainer.storagePath));
+        await deleteObject(storageRef(storage, trainer.storagePath));
       } catch (_) {}
     }
-    await deleteDoc(doc(db, COLLECTION, trainer.id));
+    await remove(dbRef(db, `${COLLECTION}/${trainer.id}`));
     fetchTrainers();
   };
 

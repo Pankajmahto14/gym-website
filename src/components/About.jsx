@@ -52,7 +52,7 @@ export default function About() {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: '-100px' });
   const { trainers, loading: trainersLoading } = useTrainers();
-  const { content: about } = useAboutContent();
+  const { content: about, loading: aboutLoading } = useAboutContent();
 
   return (
     <section id="about" className="py-24 relative overflow-hidden">
@@ -81,9 +81,13 @@ export default function About() {
           <h2 className="section-title mt-3">
             About <span className="text-gradient">FIT N FEAT</span>
           </h2>
-          <p className="section-subtitle mx-auto mt-4">
-            {about.aboutSubtitle}
-          </p>
+          <div className="section-subtitle mx-auto mt-4">
+            {aboutLoading || !about ? (
+              <div className="h-4 w-80 bg-dark-50 rounded mx-auto animate-pulse" />
+            ) : (
+              about.aboutSubtitle
+            )}
+          </div>
         </motion.div>
 
         {/* About content */}
@@ -98,19 +102,36 @@ export default function About() {
               Built for <span className="text-primary">Champions</span>
             </h3>
             <div className="space-y-4 text-gray-400 leading-relaxed">
-              <p>{about.paragraph1}</p>
-              <p>{about.paragraph2}</p>
-              <p>{about.paragraph3}</p>
+              {aboutLoading || !about ? (
+                <>
+                  <div className="h-4 w-full bg-dark-50 rounded animate-pulse" />
+                  <div className="h-4 w-11/12 bg-dark-50 rounded animate-pulse" />
+                  <div className="h-4 w-10/12 bg-dark-50 rounded animate-pulse" />
+                </>
+              ) : (
+                <>
+                  <p>{about.paragraph1}</p>
+                  <p>{about.paragraph2}</p>
+                  <p>{about.paragraph3}</p>
+                </>
+              )}
             </div>
             <div className="flex flex-wrap gap-3 mt-8">
-              {about.chips.map((f) => (
-                <span
-                  key={f}
-                  className="glass text-sm text-primary px-4 py-2 rounded-full"
-                >
-                  {f}
-                </span>
-              ))}
+              {aboutLoading || !about
+                ? [1, 2, 3].map((i) => (
+                    <div
+                      key={i}
+                      className="h-7 w-24 bg-dark-50 rounded-full animate-pulse"
+                    />
+                  ))
+                : (about.chips || []).map((f) => (
+                    <span
+                      key={f}
+                      className="glass text-sm text-primary px-4 py-2 rounded-full"
+                    >
+                      {f}
+                    </span>
+                  ))}
             </div>
           </motion.div>
 
@@ -118,7 +139,9 @@ export default function About() {
           <motion.div variants={itemVariants} className="relative">
             <div className="relative rounded-3xl overflow-hidden aspect-[4/3] bg-dark-50">
               <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent" />
-              {about.gymImageUrl ? (
+              {aboutLoading || !about ? (
+                <div className="w-full h-full bg-dark-50 animate-pulse rounded-3xl" />
+              ) : about.gymImageUrl ? (
                 <img
                   src={about.gymImageUrl}
                   alt="FIT N FEAT Gym"
@@ -141,10 +164,21 @@ export default function About() {
               transition={{ duration: 3, repeat: Infinity }}
               className="absolute -bottom-6 -left-6 glass rounded-2xl p-4 shadow-xl"
             >
-              <div className="font-display text-2xl font-bold text-primary">
-                {about.badgeTitle}
-              </div>
-              <div className="text-xs text-gray-400">{about.badgeSubtitle}</div>
+              {aboutLoading || !about ? (
+                <div className="space-y-2">
+                  <div className="h-5 w-10 bg-dark-50 rounded animate-pulse" />
+                  <div className="h-3 w-20 bg-dark-50 rounded animate-pulse" />
+                </div>
+              ) : (
+                <>
+                  <div className="font-display text-2xl font-bold text-primary">
+                    {about.badgeTitle}
+                  </div>
+                  <div className="text-xs text-gray-400">
+                    {about.badgeSubtitle}
+                  </div>
+                </>
+              )}
             </motion.div>
           </motion.div>
         </motion.div>
@@ -156,19 +190,31 @@ export default function About() {
           animate={inView ? 'visible' : 'hidden'}
           className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-24"
         >
-          {about.stats.map((s, i) => (
-            <motion.div
-              key={i}
-              variants={itemVariants}
-              className="card-dark p-6 text-center hover:border-primary/30 transition-colors group"
-            >
-              <div className="text-3xl mb-2">{s.icon || '🏋️'}</div>
-              <div className="font-display text-4xl font-bold text-primary">
-                <AnimatedCounter target={s.value} suffix={s.suffix || ''} />
-              </div>
-              <div className="text-gray-400 text-sm mt-2">{s.label}</div>
-            </motion.div>
-          ))}
+          {aboutLoading || !about
+            ? [1, 2, 3, 4].map((i) => (
+                <motion.div
+                  key={i}
+                  variants={itemVariants}
+                  className="card-dark p-6 text-center"
+                >
+                  <div className="w-10 h-10 mx-auto mb-3 bg-dark-50 rounded-full animate-pulse" />
+                  <div className="h-6 w-16 mx-auto bg-dark-50 rounded animate-pulse" />
+                  <div className="h-3 w-20 mx-auto mt-2 bg-dark-50 rounded animate-pulse" />
+                </motion.div>
+              ))
+            : (about.stats || []).map((s, i) => (
+                <motion.div
+                  key={i}
+                  variants={itemVariants}
+                  className="card-dark p-6 text-center hover:border-primary/30 transition-colors group"
+                >
+                  <div className="text-3xl mb-2">{s.icon || '🏋️'}</div>
+                  <div className="font-display text-4xl font-bold text-primary">
+                    <AnimatedCounter target={s.value} suffix={s.suffix || ''} />
+                  </div>
+                  <div className="text-gray-400 text-sm mt-2">{s.label}</div>
+                </motion.div>
+              ))}
         </motion.div>
 
         {/* Trainers */}
