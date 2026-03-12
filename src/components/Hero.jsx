@@ -72,14 +72,14 @@ export default function Hero() {
         ))}
       </div>
 
-      {/* Content */}
-      <div className="relative z-10 text-center px-4 max-w-5xl mx-auto">
-        {/* Badge */}
+      {/* Content: extra top padding on desktop so badge doesn't sit under nav */}
+      <div className="relative z-10 text-center px-4 max-w-5xl mx-auto pt-4 md:pt-20">
+        {/* Badge - clear spacing on web so it doesn't overlap nav */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="inline-flex flex-wrap items-center justify-center gap-2 glass rounded-full px-4 py-2 mb-8 text-xs sm:text-sm text-primary font-medium max-w-xs mx-auto"
+          className="inline-flex flex-wrap items-center justify-center gap-2 glass rounded-full px-4 py-2 mb-8 text-xs sm:text-sm text-primary font-medium max-w-xs mx-auto md:mb-10"
         >
           <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
           <span className="whitespace-normal text-center">Keep Fit &amp; Gain Skills</span>
@@ -129,12 +129,12 @@ export default function Hero() {
         </motion.div>
       </div>
 
-      {/* Scroll indicator */}
+      {/* Scroll indicator - mobile only; hidden on web to avoid clutter */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1 }}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-gray-500"
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-gray-500 md:hidden"
       >
         <span className="text-xs uppercase tracking-widest">Scroll</span>
         <motion.div
