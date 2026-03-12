@@ -24,6 +24,8 @@ export default function Contact() {
     { icon: PhoneIcon, label: 'Phone', value: contactInfo.phone },
     { icon: EnvelopeIcon, label: 'Email', value: contactInfo.email },
     { icon: ClockIcon, label: 'Hours', value: contactInfo.hours },
+
+    
   ];
 
   const handleSubmit = async (e) => {
