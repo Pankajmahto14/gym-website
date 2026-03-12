@@ -2,6 +2,7 @@ import { useRef, useEffect, useState } from 'react';
 import { motion, useInView } from 'framer-motion';
 import { useTrainers } from '../hooks/useTrainers';
 import { useAboutContent } from '../hooks/useAboutContent';
+import ImageLightbox from './ImageLightbox';
 
 function AnimatedCounter({ target, suffix = '' }) {
   const [count, setCount] = useState(0);
@@ -53,6 +54,7 @@ export default function About() {
   const inView = useInView(ref, { once: true, margin: '-100px' });
   const { trainers, loading: trainersLoading } = useTrainers();
   const { content: about, loading: aboutLoading } = useAboutContent();
+  const [lightboxImage, setLightboxImage] = useState(null);
 
   return (
     <section id="about" className="py-24 relative overflow-hidden">
@@ -137,7 +139,11 @@ export default function About() {
 
           {/* Visual element */}
           <motion.div variants={itemVariants} className="relative">
-            <div className="relative rounded-3xl overflow-hidden aspect-[4/3] bg-dark-50">
+            <div
+              className="relative rounded-3xl overflow-hidden aspect-[4/3] bg-dark-50 cursor-pointer"
+              role={about?.gymImageUrl ? 'button' : undefined}
+              onClick={() => about?.gymImageUrl && setLightboxImage({ src: about.gymImageUrl, alt: 'FIT N FEAT Gym', caption: about.badgeTitle || '' })}
+            >
               <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent" />
               {aboutLoading || !about ? (
                 <div className="w-full h-full bg-dark-50 animate-pulse rounded-3xl" />
@@ -236,21 +242,28 @@ export default function About() {
           variants={containerVariants}
           initial="hidden"
           animate={inView ? 'visible' : 'hidden'}
-          className="grid md:grid-cols-3 gap-8"
+          className="flex overflow-x-auto gap-6 pb-2 -mx-4 px-4 md:mx-0 md:px-0 md:grid md:grid-cols-3 md:gap-8 md:overflow-visible scrollbar-hide"
         >
           {trainersLoading ? (
             [...Array(3)].map((_, i) => (
-              <motion.div key={i} variants={itemVariants} className="card-dark overflow-hidden">
-                <div className="h-48 bg-dark-50 animate-pulse" />
+              <motion.div
+                key={i}
+                variants={itemVariants}
+                className="flex-shrink-0 w-[85vw] max-w-[320px] card-dark overflow-hidden animate-pulse snap-center md:w-auto md:max-w-none md:flex-shrink"
+              >
+                <div className="h-48 bg-dark-50" />
                 <div className="p-6 space-y-2">
-                  <div className="h-5 bg-dark-50 rounded w-3/4 animate-pulse" />
-                  <div className="h-4 bg-dark-50 rounded w-1/2 animate-pulse" />
-                  <div className="h-4 bg-dark-50 rounded w-1/3 animate-pulse" />
+                  <div className="h-5 bg-dark-50 rounded w-3/4" />
+                  <div className="h-4 bg-dark-50 rounded w-1/2" />
+                  <div className="h-4 bg-dark-50 rounded w-1/3" />
                 </div>
               </motion.div>
             ))
           ) : trainers.length === 0 ? (
-            <motion.p variants={itemVariants} className="col-span-3 text-center text-gray-500 py-8">
+            <motion.p
+              variants={itemVariants}
+              className="min-w-full text-center text-gray-500 py-8 md:col-span-3"
+            >
               No trainers added yet. Admin can add trainers from the dashboard.
             </motion.p>
           ) : (
@@ -259,10 +272,14 @@ export default function About() {
                 key={t.id}
                 variants={itemVariants}
                 whileHover={{ y: -8 }}
-                className="card-dark overflow-hidden group cursor-pointer"
+                className="flex-shrink-0 w-[85vw] max-w-[320px] card-dark overflow-hidden group cursor-pointer snap-center md:w-auto md:max-w-none md:flex-shrink"
               >
                 {/* Avatar / Photo from Firebase */}
-                <div className={`h-48 relative bg-gradient-to-br ${CARD_COLORS[i % CARD_COLORS.length]} overflow-hidden`}>
+                <div
+                  className={`h-48 relative bg-gradient-to-br ${CARD_COLORS[i % CARD_COLORS.length]} overflow-hidden cursor-pointer`}
+                  role={t.imageUrl ? 'button' : undefined}
+                  onClick={(e) => { if (t.imageUrl) { e.stopPropagation(); setLightboxImage({ src: t.imageUrl, alt: t.name || 'Trainer', caption: [t.name, t.role].filter(Boolean).join(' · ') }); } }}
+                >
                   {t.imageUrl ? (
                     <img
                       src={t.imageUrl}
@@ -291,6 +308,14 @@ export default function About() {
             ))
           )}
         </motion.div>
+
+        <ImageLightbox
+          open={!!lightboxImage}
+          src={lightboxImage?.src}
+          alt={lightboxImage?.alt}
+          caption={lightboxImage?.caption}
+          onClose={() => setLightboxImage(null)}
+        />
       </div>
     </section>
   );

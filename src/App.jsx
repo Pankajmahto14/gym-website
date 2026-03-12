@@ -10,6 +10,7 @@ import AdminDashboard from './admin/AdminDashboard';
 import AdminTrainers from './admin/AdminTrainers';
 import AdminAbout from './admin/AdminAbout';
 import AdminContactInfo from './admin/AdminContactInfo';
+import AdminEquipment from './admin/AdminEquipment';
 import MediaManager from './admin/MediaManager';
 
 export default function App() {
@@ -57,6 +58,7 @@ export default function App() {
             <Route path="trainers" element={<AdminTrainers />} />
             <Route path="about" element={<AdminAbout />} />
             <Route path="find-us" element={<AdminContactInfo />} />
+            <Route path="equipment" element={<AdminEquipment />} />
             <Route path="images" element={<MediaManager type="image" />} />
             <Route path="videos" element={<MediaManager type="video" />} />
           </Route>

@@ -87,11 +87,11 @@ export default function Videos() {
         </motion.div>
 
         {loading ? (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="flex overflow-x-auto gap-4 pb-2 -mx-4 px-4 md:mx-0 md:px-0 md:grid md:grid-cols-2 lg:grid-cols-3 md:overflow-visible scrollbar-hide">
             {Array.from({ length: 3 }).map((_, i) => (
               <div
                 key={i}
-                className="aspect-video rounded-2xl bg-dark-50 animate-pulse"
+                className="flex-shrink-0 w-[85vw] max-w-[340px] aspect-video rounded-2xl bg-dark-50 animate-pulse snap-center md:w-auto md:max-w-none md:flex-shrink"
               />
             ))}
           </div>
@@ -112,14 +112,14 @@ export default function Videos() {
             variants={containerVariants}
             initial="hidden"
             animate={inView ? 'visible' : 'hidden'}
-            className="grid md:grid-cols-2 lg:grid-cols-3 gap-6"
+            className="flex overflow-x-auto gap-4 pb-2 -mx-4 px-4 md:mx-0 md:px-0 md:grid md:grid-cols-2 lg:grid-cols-3 md:overflow-visible scrollbar-hide"
           >
             {items.map((vid) => (
               <motion.div
                 key={vid.id}
                 variants={itemVariants}
                 whileHover={{ y: -6 }}
-                className="relative aspect-video rounded-2xl overflow-hidden cursor-pointer group card-dark"
+                className="relative flex-shrink-0 w-[85vw] max-w-[340px] aspect-video rounded-2xl overflow-hidden cursor-pointer group card-dark snap-center md:w-auto md:max-w-none md:flex-shrink"
                 onClick={() => setActiveVideo(vid)}
               >
                 <video

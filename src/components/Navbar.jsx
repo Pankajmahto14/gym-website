@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import Logo from './Logo';
@@ -9,6 +9,7 @@ const links = [
   { label: 'About', href: '#about' },
   { label: 'Gallery', href: '#gallery' },
   { label: 'Videos', href: '#videos' },
+  { label: 'Equipment', href: '#equipment' },
   { label: 'Contact', href: '#contact' },
 ];
 
@@ -16,6 +17,7 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const isAdmin = location.pathname.startsWith('/admin');
 
   useEffect(() => {
@@ -26,10 +28,16 @@ export default function Navbar() {
 
   const handleNavClick = (href) => {
     setOpen(false);
-    if (href.startsWith('#')) {
-      const el = document.querySelector(href);
-      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    if (!href.startsWith('#')) return;
+    const id = href.slice(1);
+    if (location.pathname !== '/') {
+      navigate(`/${href}`);
+      return;
     }
+    requestAnimationFrame(() => {
+      const el = document.getElementById(id);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
   };
 
   if (isAdmin) return null;

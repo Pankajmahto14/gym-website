@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion';
-import { PhotoIcon, VideoCameraIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
+import { PhotoIcon, VideoCameraIcon, ArrowRightIcon, CubeTransparentIcon } from '@heroicons/react/24/outline';
 import { Link } from 'react-router-dom';
 import { useMedia } from '../hooks/useMedia';
+import { useEquipment } from '../hooks/useEquipment';
 
 function StatCard({ icon: Icon, label, count, to, color }) {
   return (
@@ -30,6 +31,7 @@ function StatCard({ icon: Icon, label, count, to, color }) {
 export default function AdminDashboard() {
   const { items: images } = useMedia('image');
   const { items: videos } = useMedia('video');
+  const { equipment } = useEquipment();
 
   const containerVariants = {
     hidden: {},
@@ -61,7 +63,7 @@ export default function AdminDashboard() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="grid sm:grid-cols-2 gap-6 mb-10"
+        className="grid sm:grid-cols-3 gap-6 mb-10"
       >
         <motion.div variants={itemVariants}>
           <StatCard
@@ -81,6 +83,15 @@ export default function AdminDashboard() {
             color="bg-orange-600"
           />
         </motion.div>
+        <motion.div variants={itemVariants}>
+          <StatCard
+            icon={CubeTransparentIcon}
+            label="Equipment"
+            count={equipment.length}
+            to="/admin/equipment"
+            color="bg-amber-600"
+          />
+        </motion.div>
       </motion.div>
 
       {/* Quick Actions */}
@@ -91,7 +102,7 @@ export default function AdminDashboard() {
         className="card-dark p-6 mb-8"
       >
         <h2 className="font-display text-xl font-bold mb-4">Quick Actions</h2>
-        <div className="grid sm:grid-cols-2 gap-4">
+        <div className="grid sm:grid-cols-3 gap-4">
           <Link
             to="/admin/images"
             className="flex items-center gap-3 p-4 rounded-xl bg-primary/10 hover:bg-primary/20 transition-colors border border-primary/20 group"
@@ -107,6 +118,14 @@ export default function AdminDashboard() {
             <VideoCameraIcon className="w-6 h-6 text-orange-400" />
             <span className="font-medium">Upload Videos</span>
             <ArrowRightIcon className="w-4 h-4 text-orange-400 ml-auto group-hover:translate-x-1 transition-transform" />
+          </Link>
+          <Link
+            to="/admin/equipment"
+            className="flex items-center gap-3 p-4 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 transition-colors border border-amber-500/20 group"
+          >
+            <CubeTransparentIcon className="w-6 h-6 text-amber-400" />
+            <span className="font-medium">Manage Equipment</span>
+            <ArrowRightIcon className="w-4 h-4 text-amber-400 ml-auto group-hover:translate-x-1 transition-transform" />
           </Link>
         </div>
       </motion.div>

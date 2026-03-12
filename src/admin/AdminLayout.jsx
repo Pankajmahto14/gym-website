@@ -10,6 +10,7 @@ import {
   UserGroupIcon,
   MapPinIcon,
   DocumentTextIcon,
+  CubeTransparentIcon,
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
@@ -20,6 +21,7 @@ const navItems = [
   { to: '/admin/about', icon: DocumentTextIcon, label: 'About' },
   { to: '/admin/trainers', icon: UserGroupIcon, label: 'Trainers' },
   { to: '/admin/find-us', icon: MapPinIcon, label: 'Find Us' },
+  { to: '/admin/equipment', icon: CubeTransparentIcon, label: 'Equipment' },
   { to: '/admin/images', icon: PhotoIcon, label: 'Images' },
   { to: '/admin/videos', icon: VideoCameraIcon, label: 'Videos' },
 ];

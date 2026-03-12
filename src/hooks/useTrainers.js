@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { ref as dbRef, get, push, set, update, remove } from 'firebase/database';
-import { ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
-import { db, storage } from '../firebase/config';
+import { db } from '../firebase/config';
 import { getCached, setCache } from '../lib/cache';
+import { uploadToCloudinary } from '../lib/cloudinaryUpload';
 
 const COLLECTION = 'trainers';
 const CACHE_KEY = 'trainers';
@@ -45,21 +45,11 @@ export function useTrainers() {
     let storagePath = null;
 
     if (imageFile) {
-      const path = `trainers/${Date.now()}_${imageFile.name}`;
-      const fileRef = storageRef(storage, path);
-      await new Promise((resolve, reject) => {
-        const task = uploadBytesResumable(fileRef, imageFile);
-        task.on(
-          'state_changed',
-          (snap) => onProgress?.(Math.round((snap.bytesTransferred / snap.totalBytes) * 100)),
-          reject,
-          async () => {
-            imageUrl = await getDownloadURL(task.snapshot.ref);
-            storagePath = path;
-            resolve();
-          }
-        );
-      });
+      onProgress?.(10);
+      const upload = await uploadToCloudinary(imageFile);
+      imageUrl = upload.url;
+      storagePath = upload.publicId || null;
+      onProgress?.(100);
     }
 
     const listRef = dbRef(db, COLLECTION);
@@ -85,21 +75,11 @@ export function useTrainers() {
     };
 
     if (imageFile) {
-      const path = `trainers/${Date.now()}_${imageFile.name}`;
-      const fileRef = storageRef(storage, path);
-      await new Promise((resolve, reject) => {
-        const task = uploadBytesResumable(fileRef, imageFile);
-        task.on(
-          'state_changed',
-          (snap) => onProgress?.(Math.round((snap.bytesTransferred / snap.totalBytes) * 100)),
-          reject,
-          async () => {
-            updates.imageUrl = await getDownloadURL(task.snapshot.ref);
-            updates.storagePath = path;
-            resolve();
-          }
-        );
-      });
+      onProgress?.(10);
+      const upload = await uploadToCloudinary(imageFile);
+      updates.imageUrl = upload.url;
+      updates.storagePath = upload.publicId || null;
+      onProgress?.(100);
     }
 
     await update(dbRef(db, `${COLLECTION}/${id}`), updates);
@@ -107,11 +87,6 @@ export function useTrainers() {
   };
 
   const deleteTrainer = async (trainer) => {
-    if (trainer.storagePath) {
-      try {
-        await deleteObject(storageRef(storage, trainer.storagePath));
-      } catch (_) {}
-    }
     await remove(dbRef(db, `${COLLECTION}/${trainer.id}`));
     fetchTrainers();
   };

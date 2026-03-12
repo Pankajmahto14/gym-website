@@ -1,0 +1,16 @@
+[
+  {
+    "origin": [
+      "http://localhost",
+      "http://localhost:5173",
+      "http://localhost:3000",
+      "http://127.0.0.1",
+      "http://127.0.0.1:5173",
+      "https://gym-website-226e8.web.app",
+      "https://gym-website-226e8.firebaseapp.com"
+    ],
+    "method": ["GET", "HEAD", "PUT", "POST", "DELETE"],
+    "responseHeader": ["Content-Type", "Authorization", "Content-Length", "User-Agent", "x-goog-resumable", "x-goog-meta-*"],
+    "maxAgeSeconds": 3600
+  }
+]

@@ -108,11 +108,11 @@ export default function Gallery() {
         </motion.div>
 
         {loading ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="flex overflow-x-auto gap-4 pb-2 -mx-4 px-4 md:mx-0 md:px-0 md:grid md:grid-cols-3 lg:grid-cols-4 md:overflow-visible scrollbar-hide">
             {Array.from({ length: 8 }).map((_, i) => (
               <div
                 key={i}
-                className="aspect-square rounded-2xl bg-dark-50 animate-pulse"
+                className="flex-shrink-0 w-[72vw] aspect-square rounded-2xl bg-dark-50 animate-pulse snap-center md:w-auto md:flex-shrink"
               />
             ))}
           </div>
@@ -133,14 +133,14 @@ export default function Gallery() {
             variants={containerVariants}
             initial="hidden"
             animate={inView ? 'visible' : 'hidden'}
-            className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+            className="flex overflow-x-auto gap-4 pb-2 -mx-4 px-4 md:mx-0 md:px-0 md:grid md:grid-cols-3 lg:grid-cols-4 md:overflow-visible scrollbar-hide"
           >
             {items.map((img, i) => (
               <motion.div
                 key={img.id}
                 variants={itemVariants}
                 whileHover={{ scale: 1.03 }}
-                className="relative aspect-square rounded-2xl overflow-hidden cursor-pointer group"
+                className="relative flex-shrink-0 w-[72vw] aspect-square rounded-2xl overflow-hidden cursor-pointer group snap-center md:w-auto md:flex-shrink"
                 onClick={() => setLightboxIdx(i)}
               >
                 <img

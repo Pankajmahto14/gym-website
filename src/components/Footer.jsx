@@ -23,15 +23,26 @@ export default function Footer() {
               training in Adityapur, Jamshedpur.
             </p>
             <div className="flex gap-4 mt-6">
-              {['FB', 'IG', 'TW', 'YT'].map((s) => (
-                <motion.div
-                  key={s}
-                  whileHover={{ scale: 1.1 }}
-                  className="w-9 h-9 rounded-full glass flex items-center justify-center text-xs text-gray-400 hover:text-primary hover:border-primary/50 cursor-pointer transition-colors"
-                >
-                  {s}
-                </motion.div>
-              ))}
+              <motion.a
+                href="https://www.facebook.com/share/1ApQgtYhp7/"
+                target="_blank"
+                rel="noopener noreferrer"
+                whileHover={{ scale: 1.1 }}
+                className="w-9 h-9 rounded-full glass flex items-center justify-center text-xs text-gray-400 hover:text-primary hover:border-primary/50 cursor-pointer transition-colors"
+                aria-label="Facebook"
+              >
+                FB
+              </motion.a>
+              <motion.a
+                href="https://www.instagram.com/fitnfeatgym?igsh=bnV2MXpvZW93MjFv"
+                target="_blank"
+                rel="noopener noreferrer"
+                whileHover={{ scale: 1.1 }}
+                className="w-9 h-9 rounded-full glass flex items-center justify-center text-xs text-gray-400 hover:text-primary hover:border-primary/50 cursor-pointer transition-colors"
+                aria-label="Instagram"
+              >
+                IG
+              </motion.a>
             </div>
           </div>
 
@@ -46,6 +57,7 @@ export default function Footer() {
                 ['About', '#about'],
                 ['Gallery', '#gallery'],
                 ['Videos', '#videos'],
+                ['Equipment', '#equipment'],
                 ['Contact', '#contact'],
               ].map(([label, id]) => (
                 <li key={label}>

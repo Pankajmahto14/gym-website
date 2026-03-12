@@ -1,13 +1,8 @@
 import { useState, useEffect } from 'react';
 import { ref as dbRef, get, push, set, update, remove } from 'firebase/database';
-import {
-  ref as storageRef,
-  uploadBytesResumable,
-  getDownloadURL,
-  deleteObject,
-} from 'firebase/storage';
-import { db, storage } from '../firebase/config';
+import { db } from '../firebase/config';
 import { getCached, setCache } from '../lib/cache';
+import { uploadToCloudinary } from '../lib/cloudinaryUpload';
 
 export function useMedia(type) {
   const [items, setItems] = useState([]);
@@ -47,42 +42,23 @@ export function useMedia(type) {
 
   const uploadMedia = async (file, caption = '', onProgress) => {
     const uploadCol = file.type.startsWith('image') ? 'images' : 'videos';
-    const fileRef = storageRef(storage, `${uploadCol}/${Date.now()}_${file.name}`);
-
-    return new Promise((resolve, reject) => {
-      const task = uploadBytesResumable(fileRef, file);
-
-      task.on(
-        'state_changed',
-        (snap) => {
-          const pct = Math.round(
-            (snap.bytesTransferred / snap.totalBytes) * 100
-          );
-          onProgress?.(pct);
-        },
-        reject,
-        async () => {
-          const url = await getDownloadURL(task.snapshot.ref);
-          const listRef = dbRef(db, uploadCol);
-          const newRef = push(listRef);
-          await set(newRef, {
-            url,
-            caption,
-            name: file.name,
-            storagePath: task.snapshot.ref.fullPath,
-            createdAt: Date.now(),
-          });
-          fetchItems();
-          resolve({ id: newRef.key, url, caption });
-        }
-      );
+    onProgress?.(10);
+    const upload = await uploadToCloudinary(file);
+    onProgress?.(100);
+    const listRef = dbRef(db, uploadCol);
+    const newRef = push(listRef);
+    await set(newRef, {
+      url: upload.url,
+      caption,
+      name: file.name,
+      storagePath: upload.publicId || null,
+      createdAt: Date.now(),
     });
+    fetchItems();
+    return { id: newRef.key, url: upload.url, caption };
   };
 
   const deleteMedia = async (item, collectionName) => {
-    if (item.storagePath) {
-      await deleteObject(storageRef(storage, item.storagePath));
-    }
     await remove(dbRef(db, `${collectionName}/${item.id}`));
     fetchItems();
   };

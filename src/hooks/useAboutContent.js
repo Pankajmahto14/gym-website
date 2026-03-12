@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { ref as dbRef, get, set } from 'firebase/database';
-import { ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
-import { db, storage } from '../firebase/config';
+import { db } from '../firebase/config';
 import { getCached, setCache } from '../lib/cache';
+import { uploadToCloudinary } from '../lib/cloudinaryUpload';
 
 const CACHE_KEY = 'about';
 
@@ -48,7 +48,7 @@ function mergeWithDefaults(data) {
   };
 }
 
-/** Firestore does not accept undefined; strip it so setDoc never fails on invalid data. */
+/** Strip undefined values before writing to database. */
 function sanitizeForFirestore(obj) {  
   if (obj === null || obj === undefined) return obj;
   if (Array.isArray(obj)) return obj.map((item) => sanitizeForFirestore(item));
@@ -126,19 +126,10 @@ export function useAboutContent() {
 
   const uploadGymImage = async (file, onProgress) => {
     const toUpload = await resizeImageIfNeeded(file);
-    const path = `${GYM_IMAGE_PATH}_${Date.now()}.${file.name.split('.').pop() || 'jpg'}`;
-    const fileRef = storageRef(storage, path);
-    await new Promise((resolve, reject) => {
-      const task = uploadBytesResumable(fileRef, toUpload);
-      task.on(
-        'state_changed',
-        (snap) => onProgress?.(Math.round((snap.bytesTransferred / snap.totalBytes) * 100)),
-        reject,
-        resolve
-      );
-    });
-    const url = await getDownloadURL(fileRef);
-    return { url, storagePath: path };
+    onProgress?.(10);
+    const upload = await uploadToCloudinary(toUpload);
+    onProgress?.(100);
+    return { url: upload.url, storagePath: upload.publicId || `${GYM_IMAGE_PATH}_${Date.now()}` };
   };
 
   const saveAboutContent = async (data, gymImageFile, onProgress) => {
@@ -167,21 +158,11 @@ export function useAboutContent() {
     // Optimistic UI update: show new text/chips/stats immediately (keep current image until upload done)
     // We no longer show default content optimistically to avoid flicker.
     // Instead we keep showing the skeleton until Realtime Database data arrives.
-    const optimisticPayload = buildPayload(
-      content?.gymImageUrl ?? '',
-      content?.gymImageStoragePath ?? ''
-    );
-
     let gymImageUrl = content?.gymImageUrl ?? '';
     let gymImageStoragePath = content?.gymImageStoragePath ?? '';
     let imageError = null;
 
     if (gymImageFile) {
-      if (content?.gymImageStoragePath) {
-        try {
-          await deleteObject(storageRef(storage, content.gymImageStoragePath));
-        } catch (_) {}
-      }
       try {
         const result = await uploadGymImage(gymImageFile, onProgress);
         gymImageUrl = result.url;
@@ -192,11 +173,8 @@ export function useAboutContent() {
       }
     }
 
-    const payload = buildPayload(gymImageUrl, gymImageStoragePath);
-    console.log("WRITING TO DB:", payload);
-
+    const payload = sanitizeForFirestore(buildPayload(gymImageUrl, gymImageStoragePath));
     await set(dbRef(db, `${SETTINGS_COLLECTION}/${ABOUT_DOC_ID}`), payload);
-    console.log("DB WRITE COMPLETE");
     const next = mergeWithDefaults(payload);
     setContent(next);
     setCache(CACHE_KEY, next);
